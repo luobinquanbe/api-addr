@@ -1,0 +1,31 @@
+name: Update Encrypted Config
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run encryption script
+        env:
+          API_KEY_BASE64: ${{ secrets.API_KEY_BASE64 }}
+          API_URL: ${{ secrets.API_URL }}
+          BACKUP_URL: ${{ secrets.BACKUP_URL }}
+        run: node scripts/encrypt.js
+
+      - name: Commit and push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add encrypted_config.json
+          git diff --staged --quiet || git commit -m "Auto-update config: $(date)"
+          git push
